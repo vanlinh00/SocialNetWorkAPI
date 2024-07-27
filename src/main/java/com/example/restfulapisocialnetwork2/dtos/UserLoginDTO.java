@@ -13,6 +13,7 @@ public class UserLoginDTO {
     @JsonProperty("phone_number")
     private String phoneNumber;
 
+    @JsonProperty("password")
     private String passWord;
 
 }

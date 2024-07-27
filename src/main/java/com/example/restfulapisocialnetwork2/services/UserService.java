@@ -10,12 +10,15 @@ import com.example.restfulapisocialnetwork2.repositories.RoleRepository;
 import com.example.restfulapisocialnetwork2.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -27,6 +30,8 @@ public class UserService implements IUserService {
     private final PasswordEncoder passWordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
+
+    private JavaMailSender mailSender;
 
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
@@ -63,11 +68,9 @@ public class UserService implements IUserService {
             String encodePassword = passWordEncoder.encode(password);
             newUser.setPassword(encodePassword);
 
-       }
+        }
         return userRepository.save(newUser);
     }
-
-
 
     @Override
     public String login(String phoneNumber, String password) throws Exception {
@@ -79,7 +82,7 @@ public class UserService implements IUserService {
         }
         User existingUser = optionalUser.get();
         if (existingUser.getFacebookAccountId() == 0 && existingUser.getGoogleAccountId() == 0) {
-            if (!passWordEncoder.matches(existingUser.getPassword(), password)) {
+            if (!passWordEncoder.matches(password, existingUser.getPassword())) {
                 throw new BadCredentialsException("Wrong phone number or password");
             }
         }
@@ -90,6 +93,29 @@ public class UserService implements IUserService {
         //authenticate with Java Spring security   // xác thực với sring security
         authenticationManager.authenticate(authenticationToken);
         return jwtTokenUtil.generateToken(existingUser);
+    }
+
+
+    @Override
+    public void sendVerificationCode(String email) throws DataNotFoundException {
+        String verificationCode = generateVerificationCode();
+        sendVerificationEmail(email, verificationCode);
+    }
+
+    @Override
+    public String generateVerificationCode() throws DataNotFoundException {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
+    }
+
+    @Override
+    public void sendVerificationEmail(String toEmail, String verificationCode) throws DataNotFoundException {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Verify Code");
+        message.setText("Your Code is " + verificationCode);
+        mailSender.send(message);
     }
 
 }
