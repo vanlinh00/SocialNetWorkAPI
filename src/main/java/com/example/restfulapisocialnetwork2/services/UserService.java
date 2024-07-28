@@ -22,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -83,7 +84,6 @@ public class UserService implements IUserService {
     @Override
     public String login(String phoneNumber, String password) throws Exception {
 
-
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if (optionalUser.isEmpty()) {
             throw new DataNotFoundException("Invalid phoneNumber or password");
@@ -142,7 +142,15 @@ public class UserService implements IUserService {
                                 "Cannot find user with id: " + userVerificationDTO.getUserId()
                         ));
 
-            return ResponseEntity.ok("1");
+        List<VerificationCode> ListVerification = verificationCodeRepository.findByUserId(exitingUser.getId());
+        if (!ListVerification.isEmpty()) {
+            VerificationCode lastVerificationCode = ListVerification.get(ListVerification.size() - 1);
+
+            if (lastVerificationCode.getVertificationCode().equals(userVerificationDTO.getVerificationCode())) {
+                return ResponseEntity.ok("Correct");
+            }
+        }
+        throw new DataIntegrityViolationException("UnCorrect");
     }
 
 }

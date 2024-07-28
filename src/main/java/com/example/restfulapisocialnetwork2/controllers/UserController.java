@@ -94,4 +94,13 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+//    @GetMapping("/logout")
+//    public ResponseEntity<String> logout(
+//    ){
+//        try {
+//
+//        } catch (Exception e){
+//
+//        }
+//    }
 }
