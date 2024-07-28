@@ -2,25 +2,31 @@ package com.example.restfulapisocialnetwork2.services;
 
 import com.example.restfulapisocialnetwork2.components.JwtTokenUtil;
 import com.example.restfulapisocialnetwork2.dtos.UserDTO;
+import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.exceptions.PermissionDenyException;
 import com.example.restfulapisocialnetwork2.models.Role;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.models.VerificationCode;
 import com.example.restfulapisocialnetwork2.repositories.RoleRepository;
 import com.example.restfulapisocialnetwork2.repositories.UserRepository;
+import com.example.restfulapisocialnetwork2.repositories.VerificationCodeRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
 
 @AllArgsConstructor
 @Service
@@ -32,6 +38,7 @@ public class UserService implements IUserService {
     private final JwtTokenUtil jwtTokenUtil;
 
     private JavaMailSender mailSender;
+    private final VerificationCodeRepository verificationCodeRepository;
 
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
@@ -48,6 +55,7 @@ public class UserService implements IUserService {
                 .dateOfBirth(userDTO.getDateOfBirth())
                 .facebookAccountId(userDTO.getGoogleAccountId())
                 .googleAccountId(userDTO.getGoogleAccountId())
+                .Email(userDTO.getEmail())
                 .build();
 
         Role role = roleRepository.findById(userDTO.getRoleId())
@@ -95,11 +103,18 @@ public class UserService implements IUserService {
         return jwtTokenUtil.generateToken(existingUser);
     }
 
-
     @Override
-    public void sendVerificationCode(String email) throws DataNotFoundException {
-        String verificationCode = generateVerificationCode();
-        sendVerificationEmail(email, verificationCode);
+    public void sendVerificationCode(long userId) throws DataNotFoundException {
+        String strVerificationCode = generateVerificationCode();
+        User exitingUser = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new DataNotFoundException(
+                                "Cannot find user with id: " + userId
+                        ));
+        sendVerificationEmail(exitingUser.getEmail(), strVerificationCode);
+        VerificationCode verificationCode = VerificationCode.builder(
+        ).user(exitingUser).vertificationCode(strVerificationCode).build();
+        verificationCodeRepository.save(verificationCode);
     }
 
     @Override
@@ -109,13 +124,25 @@ public class UserService implements IUserService {
         return String.valueOf(code);
     }
 
-    @Override
     public void sendVerificationEmail(String toEmail, String verificationCode) throws DataNotFoundException {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject("Verify Code");
         message.setText("Your Code is " + verificationCode);
         mailSender.send(message);
+    }
+
+    @Override
+    public ResponseEntity<?> checkVerifyCode(
+            UserVerificationDTO userVerificationDTO
+    ) throws DataNotFoundException {
+        User exitingUser = userRepository.findById(userVerificationDTO.getUserId())
+                .orElseThrow(() ->
+                        new DataNotFoundException(
+                                "Cannot find user with id: " + userVerificationDTO.getUserId()
+                        ));
+
+            return ResponseEntity.ok("1");
     }
 
 }

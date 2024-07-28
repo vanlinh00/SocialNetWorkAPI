@@ -51,6 +51,9 @@ public class User extends BaseEntity implements UserDetails {
     @JoinColumn(name = "role_id")
     private com.example.restfulapisocialnetwork2.models.Role role;
 
+    @Column(name = "email")
+    private String Email;
+
     @Override   // Lấy ra các quyền
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
