@@ -147,5 +147,14 @@ public class UserService implements IUserService {
         User existingUser = optionalUser.get();
         return existingUser;
     }
+    @Override
+    public User GetUser(Long id) throws Exception {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("Invalid phoneNumber or password");
+        }
+        User existingUser = optionalUser.get();
+        return existingUser;
+    }
 
 }

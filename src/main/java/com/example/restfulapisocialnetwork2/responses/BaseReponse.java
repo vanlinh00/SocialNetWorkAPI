@@ -5,12 +5,13 @@ import jakarta.persistence.MappedSuperclass;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
+//@Data
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@MappedSuperclass
+//@AllArgsConstructor
+//@NoArgsConstructor
+//@MappedSuperclass
+//@Builder
 public class BaseReponse {
     @JsonProperty("created_at")
     private LocalDateTime createAt;

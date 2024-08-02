@@ -20,5 +20,7 @@ public interface IUserService {
             UserVerificationDTO userVerificationDTO
     ) throws DataNotFoundException;
 
-    User GetUser(String phoneNumber)throws Exception;
+    User GetUser(String phoneNumber) throws Exception;
+
+    User GetUser(Long id) throws Exception;
 }
