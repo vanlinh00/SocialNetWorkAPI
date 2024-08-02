@@ -16,7 +16,7 @@ public class Post  extends BaseEntity {
     private Long id;
 
     @Column(name="user_id")
-    private int userId;
+    private Long userId;
 
     @Column(name = "described")
     private String described;

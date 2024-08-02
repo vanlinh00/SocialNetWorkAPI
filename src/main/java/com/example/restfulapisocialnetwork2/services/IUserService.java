@@ -19,4 +19,6 @@ public interface IUserService {
     ResponseEntity<?> checkVerifyCode(
             UserVerificationDTO userVerificationDTO
     ) throws DataNotFoundException;
+
+    User GetUser(String phoneNumber)throws Exception;
 }

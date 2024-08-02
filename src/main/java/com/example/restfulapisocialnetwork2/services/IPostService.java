@@ -3,7 +3,10 @@ package com.example.restfulapisocialnetwork2.services;
 import com.example.restfulapisocialnetwork2.dtos.PostDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.models.Post;
+import com.example.restfulapisocialnetwork2.models.User;
 
 public interface IPostService {
-    Post createPost(PostDTO postDTO) throws DataNotFoundException;
+    Post createPost(PostDTO postDTO, User user) throws DataNotFoundException;
+
+    Post getPost(long id) throws DataNotFoundException;
 }

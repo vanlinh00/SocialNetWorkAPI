@@ -2,6 +2,7 @@ package com.example.restfulapisocialnetwork2.filter;
 
 
 import com.example.restfulapisocialnetwork2.components.JwtTokenUtil;
+import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.models.User;
 import org.springframework.data.util.Pair;
 
@@ -33,6 +34,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
     private String apiPrefix;
     private final UserDetailsService userDetailsService;
     private final JwtTokenUtil jwtTokenUtil;
+    private final UserSession userSession;
 
     // đoạn này sẽ cho t biết như thế  nào thì cho đi qua như thế nào thì phải khiểm tra
     @Override
@@ -41,11 +43,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            if (isByPassToken(request)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             final String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
@@ -53,6 +50,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
             }
             final String token = authHeader.substring(7); // Bearer loai bo 7 ky tu dau tien di
             final String phoneNumber = jwtTokenUtil.extractPhoneNumber(token);
+            userSession.User(phoneNumber);
+
+            if (isByPassToken(request)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             if (phoneNumber != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User userDetails = (User) userDetailsService.loadUserByUsername(phoneNumber);
@@ -70,6 +73,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
                 // check token xong het roi no xe di qua duoc
             }
             filterChain.doFilter(request, response); //enable bypass
+
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
         }

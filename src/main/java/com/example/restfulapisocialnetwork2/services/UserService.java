@@ -37,7 +37,6 @@ public class UserService implements IUserService {
     private final PasswordEncoder passWordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
-
     private JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
 
@@ -48,20 +47,18 @@ public class UserService implements IUserService {
             throw new DataIntegrityViolationException("phone number already exists");
         }
 //        // convert from UserDTO=> User
-        User newUser = User.builder()
-                .fullName(userDTO.getFullName())
+        User newUser = User.builder().fullName(
+                userDTO.getFullName())
                 .phoneNumber(userDTO.getPhoneNumber())
                 .password(userDTO.getPassword())
                 .address(userDTO.getAddress())
                 .dateOfBirth(userDTO.getDateOfBirth())
                 .facebookAccountId(userDTO.getGoogleAccountId())
                 .googleAccountId(userDTO.getGoogleAccountId())
-                .Email(userDTO.getEmail())
-                .build();
+                .Email(userDTO.getEmail()
+                ).build();
 
-        Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() ->
-                        new DataNotFoundException("Role not found"));
+        Role role = roleRepository.findById(userDTO.getRoleId()).orElseThrow(() -> new DataNotFoundException("Role not found"));
 
 //        if (role.getName().toUpperCase().equals(Role.ADMIN))
 //        {
@@ -94,9 +91,7 @@ public class UserService implements IUserService {
                 throw new BadCredentialsException("Wrong phone number or password");
             }
         }
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                phoneNumber, password,
-                existingUser.getAuthorities() // Role user
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(phoneNumber, password, existingUser.getAuthorities() // Role user
         );  // tạo ra đôi tượng authenticationToken
         //authenticate with Java Spring security   // xác thực với sring security
         authenticationManager.authenticate(authenticationToken);
@@ -106,14 +101,9 @@ public class UserService implements IUserService {
     @Override
     public void sendVerificationCode(long userId) throws DataNotFoundException {
         String strVerificationCode = generateVerificationCode();
-        User exitingUser = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new DataNotFoundException(
-                                "Cannot find user with id: " + userId
-                        ));
+        User exitingUser = userRepository.findById(userId).orElseThrow(() -> new DataNotFoundException("Cannot find user with id: " + userId));
         sendVerificationEmail(exitingUser.getEmail(), strVerificationCode);
-        VerificationCode verificationCode = VerificationCode.builder(
-        ).user(exitingUser).vertificationCode(strVerificationCode).build();
+        VerificationCode verificationCode = VerificationCode.builder().user(exitingUser).vertificationCode(strVerificationCode).build();
         verificationCodeRepository.save(verificationCode);
     }
 
@@ -133,14 +123,8 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public ResponseEntity<?> checkVerifyCode(
-            UserVerificationDTO userVerificationDTO
-    ) throws DataNotFoundException {
-        User exitingUser = userRepository.findById(userVerificationDTO.getUserId())
-                .orElseThrow(() ->
-                        new DataNotFoundException(
-                                "Cannot find user with id: " + userVerificationDTO.getUserId()
-                        ));
+    public ResponseEntity<?> checkVerifyCode(UserVerificationDTO userVerificationDTO) throws DataNotFoundException {
+        User exitingUser = userRepository.findById(userVerificationDTO.getUserId()).orElseThrow(() -> new DataNotFoundException("Cannot find user with id: " + userVerificationDTO.getUserId()));
 
         List<VerificationCode> ListVerification = verificationCodeRepository.findByUserId(exitingUser.getId());
         if (!ListVerification.isEmpty()) {
@@ -151,6 +135,17 @@ public class UserService implements IUserService {
             }
         }
         throw new DataIntegrityViolationException("UnCorrect");
+    }
+
+    @Override
+    public User GetUser(String phoneNumber) throws Exception {
+
+        Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("Invalid phoneNumber or password");
+        }
+        User existingUser = optionalUser.get();
+        return existingUser;
     }
 
 }
