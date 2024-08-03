@@ -83,10 +83,11 @@ public class UserController {
     ) {
         try {
             if (result.hasErrors()) {
-                List<String> erroreMessages = result.getFieldErrors()
+                List<String> errorMessages = result.getFieldErrors()
                         .stream()
                         .map(FieldError::getDefaultMessage)
                         .toList();
+                return ResponseEntity.badRequest().body(errorMessages.toString());
             }
             userService.checkVerifyCode(userVerificationDTO);
             return ResponseEntity.ok("OK");

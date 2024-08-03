@@ -57,23 +57,18 @@ public class UserService implements IUserService {
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .Email(userDTO.getEmail()
                 ).build();
-
         Role role = roleRepository.findById(userDTO.getRoleId()).orElseThrow(() -> new DataNotFoundException("Role not found"));
-
 //        if (role.getName().toUpperCase().equals(Role.ADMIN))
 //        {
 //            throw new PermissionDenyException("You cannot register an admin account");
 //        }
         newUser.setRole(role);
-
         // Khiem tra neu co AccountId, khong yeu cau password
-
         if (userDTO.getFacebookAccountId() == 0 && userDTO.getGoogleAccountId() == 0) {
             String password = userDTO.getPassword();
             //Spring Security
             String encodePassword = passWordEncoder.encode(password);
             newUser.setPassword(encodePassword);
-
         }
         return userRepository.save(newUser);
     }

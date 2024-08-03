@@ -1,11 +1,9 @@
 package com.example.restfulapisocialnetwork2.controllers;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
-import com.example.restfulapisocialnetwork2.dtos.ListPostDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
-import com.example.restfulapisocialnetwork2.dtos.UserDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
 import com.example.restfulapisocialnetwork2.models.Post;
+import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
@@ -28,8 +26,8 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final UserSession userSession;
-    private final UserService userService;
 
+    //  private final UserService userService;
     @PostMapping("/add_post")
     public ResponseEntity<?> createPost(
             @Valid @RequestBody PostDTO postDTO,
@@ -51,7 +49,6 @@ public class PostController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @GetMapping("/get_post/{id}")
     public ResponseEntity<?> getPost(
@@ -81,10 +78,10 @@ public class PostController {
                 return ResponseEntity.badRequest().body(errorMessages);
             }
             List<PostResponse> postResponse = postService.GetListPost(listPostDTO.getId(), listPostDTO.getCount());
-//            return ResponseEntity.ok(
-//                    PostListResponse
-//                            .builder()
-//                            .build());
+            //            return ResponseEntity.ok(
+            //                    PostListResponse
+            //                            .builder()
+            //                            .build());
             return ResponseEntity.ok(postResponse);
         } catch (Exception e) {
 
@@ -98,10 +95,9 @@ public class PostController {
             @PathVariable long lastId
     ) {
         try {
-            List<PostResponse> postResponse = postService.GetListPost(lastId, 10);
-            return ResponseEntity.ok(postResponse);
+            List<PostResponse> listResponse = postService.GetListPost(lastId, 3);
+            return ResponseEntity.ok(listResponse);
         } catch (Exception e) {
-
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -119,10 +115,9 @@ public class PostController {
                         .toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
-
-            return ResponseEntity.ok("ok");
+            Post post = postService.updatePost(postEditDTO);
+            return ResponseEntity.ok(post);
         } catch (Exception e) {
-
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -133,10 +128,32 @@ public class PostController {
             @PathVariable long id
     ) {
         try {
-            return ResponseEntity.ok("id" + id);
+            postService.deleterPost(id);
+            return ResponseEntity.ok("Post deleted successfully");
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PostMapping("/report")
+    public ResponseEntity<?> reportPost(
+            @Valid @RequestBody ReportDTO reportDTO,
+            BindingResult result
+    ) {
+        try {
+            if (result.hasErrors()) {
+                List<String> errorMessages = result.getFieldErrors()
+                        .stream()
+                        .map(FieldError::getDefaultMessage)
+                        .toList();
+                return ResponseEntity.badRequest().body(errorMessages);
+            }
+            Report report = postService.reportPost(reportDTO);
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

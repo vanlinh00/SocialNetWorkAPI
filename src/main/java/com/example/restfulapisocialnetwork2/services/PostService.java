@@ -2,12 +2,18 @@ package com.example.restfulapisocialnetwork2.services;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.PostDTO;
+import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
+import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
+import com.example.restfulapisocialnetwork2.exceptions.PermissionDenyException;
 import com.example.restfulapisocialnetwork2.models.Post;
+import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.repositories.PostRepository;
+import com.example.restfulapisocialnetwork2.repositories.ReportRepository;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import lombok.AllArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,8 +31,9 @@ public class PostService implements IPostService {
     private final PostRepository postRepository;
     private final UserService userService;
     private final UserSession userSession;
+    private final ModelMapper modelMapper;
+    private final ReportRepository reportRepository;
 
-    @Override
     public Post createPost(PostDTO postDTO, User user) throws DataNotFoundException {
         Post newPost = Post.builder()
                 .userId(user.getId())
@@ -71,4 +78,42 @@ public class PostService implements IPostService {
         return listPostResponse;
     }
 
+    @Override
+    public Post updatePost(PostEditDTO postEditDTO) throws DataNotFoundException {
+        Post post = postRepository.findById(postEditDTO.getId()).orElseThrow(
+                () -> new DataNotFoundException("Cannot find order with it: " + postEditDTO.getId()));
+
+        if (post.getUserId() == userSession.GetUser().getId()) {
+            new PermissionDenyException("Not Access");
+        }
+        modelMapper.typeMap(PostEditDTO.class, Post.class)
+                .addMappings(
+                        mapper -> mapper.skip(Post::setId)
+                );
+        modelMapper.map(postEditDTO, post);
+        return postRepository.save(post);
+    }
+
+    @Override
+    public void deleterPost(Long id) throws DataNotFoundException {
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new DataNotFoundException("Cannot find order with it: " + id));
+        // no hard-delete, => please soft-delete
+        if (post != null) {
+            postRepository.deleteById(id);
+            postRepository.save(post);
+        }
+    }
+
+    @Override
+    public Report reportPost(ReportDTO reportDTO) throws DataNotFoundException {
+        Post post = postRepository.findById(reportDTO.getId()).orElseThrow(
+                () -> new DataNotFoundException("Cannot find order with it: " + reportDTO.getId()));
+        Report report = Report.builder()
+                .userId(userSession.GetUser().getId())
+                .postId(reportDTO.getId())
+                .content(reportDTO.getContent())
+                .build();
+        return reportRepository.save(report);
+    }
 }
