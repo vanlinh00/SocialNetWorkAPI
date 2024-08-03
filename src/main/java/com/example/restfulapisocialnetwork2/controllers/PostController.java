@@ -59,9 +59,8 @@ public class PostController {
             @PathVariable long id
     ) {
         try {
-            Post post = postService.getPost(id);
-            User userOwner = userService.GetUser(post.getUserId());
-            return ResponseEntity.ok(PostResponse.fromPost(post, userOwner));
+            PostResponse postResponse = postService.getPost(id);
+            return ResponseEntity.ok(postResponse);
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -81,12 +80,12 @@ public class PostController {
                         .toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
-            List<Post> listPosts = postService.GetListPost(listPostDTO.getId(), listPostDTO.getCount());
+            List<PostResponse> postResponse = postService.GetListPost(listPostDTO.getId(), listPostDTO.getCount());
 //            return ResponseEntity.ok(
 //                    PostListResponse
 //                            .builder()
 //                            .build());
-            return ResponseEntity.ok(listPosts);
+            return ResponseEntity.ok(postResponse);
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -99,8 +98,8 @@ public class PostController {
             @PathVariable long lastId
     ) {
         try {
-            List<Post> listPosts = postService.GetListPost(lastId, 10);
-            return ResponseEntity.ok(listPosts);
+            List<PostResponse> postResponse = postService.GetListPost(lastId, 10);
+            return ResponseEntity.ok(postResponse);
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
