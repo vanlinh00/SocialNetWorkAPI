@@ -11,6 +11,7 @@ import com.example.restfulapisocialnetwork2.models.VerificationCode;
 import com.example.restfulapisocialnetwork2.repositories.RoleRepository;
 import com.example.restfulapisocialnetwork2.repositories.UserRepository;
 import com.example.restfulapisocialnetwork2.repositories.VerificationCodeRepository;
+import com.example.restfulapisocialnetwork2.responses.UserResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +49,7 @@ public class UserService implements IUserService {
         }
 //        // convert from UserDTO=> User
         User newUser = User.builder().fullName(
-                userDTO.getFullName())
+                        userDTO.getFullName())
                 .phoneNumber(userDTO.getPhoneNumber())
                 .password(userDTO.getPassword())
                 .address(userDTO.getAddress())
@@ -142,14 +143,16 @@ public class UserService implements IUserService {
         User existingUser = optionalUser.get();
         return existingUser;
     }
+
     @Override
-    public User GetUser(Long id) throws Exception {
+    public UserResponse GetUser(Long id) throws Exception {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
             throw new DataNotFoundException("Invalid phoneNumber or password");
         }
         User existingUser = optionalUser.get();
-        return existingUser;
+        UserResponse userResponse = UserResponse.fromPost(existingUser);
+        return userResponse;
     }
 
 }

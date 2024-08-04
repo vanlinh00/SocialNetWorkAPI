@@ -11,6 +11,8 @@ import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.repositories.PostRepository;
 import com.example.restfulapisocialnetwork2.repositories.ReportRepository;
+import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
+import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -55,7 +57,7 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public List<PostResponse> GetListPost(Long index, int count) throws Exception {
+    public PostListResponse GetListPost(Long index, int count) throws Exception {
         // int pageIndex = index.intValue();
         //       int pageSize = count;
         PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
@@ -75,7 +77,10 @@ public class PostService implements IPostService {
             PostResponse postResponse = PostResponse.fromPost(post, userOwner);
             listPostResponse.add(postResponse);
         }
-        return listPostResponse;
+        return PostListResponse.builder()
+                .postResponseList(listPostResponse)
+                .newItems(listPostResponse.size())
+                .build();
     }
 
     @Override

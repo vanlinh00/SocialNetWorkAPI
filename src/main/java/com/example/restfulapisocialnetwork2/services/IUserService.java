@@ -5,6 +5,7 @@ import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.models.VerificationCode;
+import com.example.restfulapisocialnetwork2.responses.UserResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface IUserService {
@@ -22,5 +23,5 @@ public interface IUserService {
 
     User GetUser(String phoneNumber) throws Exception;
 
-    User GetUser(Long id) throws Exception;
+    UserResponse GetUser(Long id) throws Exception;
 }

@@ -77,12 +77,8 @@ public class PostController {
                         .toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
-            List<PostResponse> postResponse = postService.GetListPost(listPostDTO.getId(), listPostDTO.getCount());
-            //            return ResponseEntity.ok(
-            //                    PostListResponse
-            //                            .builder()
-            //                            .build());
-            return ResponseEntity.ok(postResponse);
+            PostListResponse postListResponse = postService.GetListPost(listPostDTO.getId(), listPostDTO.getCount());
+            return ResponseEntity.ok(postListResponse);
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -95,8 +91,8 @@ public class PostController {
             @PathVariable long lastId
     ) {
         try {
-            List<PostResponse> listResponse = postService.GetListPost(lastId, 3);
-            return ResponseEntity.ok(listResponse);
+            PostListResponse postListResponse = postService.GetListPost(lastId, 3);
+            return ResponseEntity.ok(postListResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -135,6 +131,7 @@ public class PostController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PostMapping("/report")
     public ResponseEntity<?> reportPost(
             @Valid @RequestBody ReportDTO reportDTO,

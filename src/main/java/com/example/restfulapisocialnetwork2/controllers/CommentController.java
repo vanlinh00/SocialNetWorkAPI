@@ -4,6 +4,9 @@ import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.CommentDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostDTO;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
+import com.example.restfulapisocialnetwork2.responses.PostListResponse;
+import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import com.example.restfulapisocialnetwork2.services.CommentService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -11,9 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,8 +24,8 @@ import java.util.List;
 public class CommentController {
     private final CommentService commentService;
 
-    @PostMapping("/add_post")
-    public ResponseEntity<?> createPost(
+    @PostMapping("/add_comment")
+    public ResponseEntity<?> createComment(
             @Valid @RequestBody CommentDTO commentDTO,
             BindingResult result
     ) {
@@ -43,5 +44,20 @@ public class CommentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/get_comment/{id}")
+    public ResponseEntity<?> getComment(
+            @Valid
+            @PathVariable long id
+    ) {
+        try {
+            CommentListResponse commentListResponse = commentService.GetComment(id);
+            return ResponseEntity.ok(commentListResponse);
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
 }

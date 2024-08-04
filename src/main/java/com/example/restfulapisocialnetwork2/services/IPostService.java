@@ -7,6 +7,8 @@ import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.models.Post;
 import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
+import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 
 import java.util.List;
@@ -16,7 +18,7 @@ public interface IPostService {
 
     PostResponse getPost(long id) throws Exception;
 
-    List<PostResponse> GetListPost(Long index, int count) throws Exception;
+    PostListResponse GetListPost(Long index, int count) throws Exception;
 
     Post updatePost(PostEditDTO postEditDTO) throws Exception;
 
