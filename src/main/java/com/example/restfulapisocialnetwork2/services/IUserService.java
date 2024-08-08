@@ -24,4 +24,9 @@ public interface IUserService {
     User GetUser(String phoneNumber) throws Exception;
 
     UserResponse GetUser(Long id) throws Exception;
+
+    void blacklistToken(String token) throws Exception;
+
+    // Method to check if a token is blacklisted
+    public boolean isTokenBlacklisted(String token) throws Exception;
 }

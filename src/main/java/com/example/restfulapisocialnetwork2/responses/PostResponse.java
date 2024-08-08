@@ -1,4 +1,5 @@
 package com.example.restfulapisocialnetwork2.responses;
+
 import com.example.restfulapisocialnetwork2.models.Post;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,33 +46,31 @@ public class PostResponse extends BaseReponse {
     // name
     // avatar
 
-    public static PostResponse fromPost(Post post, User user) {
-        UserResponse userReponse = UserResponse.fromPost(user);
-        int numLike = 10;
-        int numComment = 1;
-        int isUserLike = 1;
-        List<Media> images = null;
-        List<Media> videos = null;
-        int state = 1;  // trang thai cua nguoi viet
-        int isBlocked = 0; // khiem tra author co block userid khong
-        int canEdit = 0;  // khiem tra toekn co the edit bai hay khong
-        int banned = 0;
-        int canComment = 0; // coo the comment duoc bai viet khong
+    public static PostResponse fromPost(Post post, UserResponse userOwner, Long IdUserLogin) {
+        int isUserLike = post.getLikes().stream()
+                .anyMatch(like -> like.getUserId().equals(IdUserLogin)) ? 1 : 0;
+//        List<Media> images = null;
+//        List<Media> videos = null;
+//        int state = 1;  // trang thai cua nguoi viet
+//        int isBlocked = 0; // khiem tra author co block userid khong
+        int canEdit = (IdUserLogin == userOwner.getId()) ? 1 : 0;
+//        int banned = 0;
+//        int canComment = 0; // coo the comment duoc bai viet khong
 
         PostResponse postResponse = PostResponse.builder()
                 .id(post.getId())
                 .described(post.getDescribed())
-                .like(numLike)
-                .comment(numComment)
+                .like(post.getLikes().size())
+                .comment(post.getComments().size())
                 .isLike(isUserLike)
-                .images(images)
-                .videos(videos)
-                .author(userReponse)
-                .state(state)
-                .isBlocked(isBlocked)
+//                .images(images)
+//                .videos(videos)
+                .author(userOwner)
+//                .state(state)
+//                .isBlocked(isBlocked)
                 .canEdit(canEdit)
-                .banned(banned)
-                .canComment(canComment)
+//                .banned(banned)
+//                .canComment(canComment)
                 .build();
         postResponse.setCreateAt(post.getCreatedAt());
         postResponse.setUpdateAt(post.getUpdateAt());

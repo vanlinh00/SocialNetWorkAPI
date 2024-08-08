@@ -1,8 +1,8 @@
 package com.example.restfulapisocialnetwork2.controllers;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
-import com.example.restfulapisocialnetwork2.dtos.CommentDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
+import com.example.restfulapisocialnetwork2.models.Post;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
@@ -59,5 +59,44 @@ public class CommentController {
         }
     }
 
+    @PostMapping("/del_comment")
+    public ResponseEntity<?> deleteComment(
+            @Valid @RequestBody DeleteCommentDTO deleteCommentDTO,
+            BindingResult result
+    ) {
+        try {
+            if (result.hasErrors()) {
+                List<String> errorMessages = result.getFieldErrors()
+                        .stream()
+                        .map(FieldError::getDefaultMessage)
+                        .toList();
+                return ResponseEntity.badRequest().body(errorMessages);
+            }
+            commentService.DeleteComment(deleteCommentDTO);
+            return ResponseEntity.ok("Delete successfully");
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/edit_comments")
+    public ResponseEntity<?> editComments(
+            @Valid @RequestBody EditCommentDTO editCommentDTO,
+            BindingResult result
+    ) {
+        try {
+            if (result.hasErrors()) {
+                List<String> errorMessages = result.getFieldErrors()
+                        .stream()
+                        .map(FieldError::getDefaultMessage)
+                        .toList();
+                return ResponseEntity.badRequest().body(errorMessages);
+            }
+            return null;
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
 }

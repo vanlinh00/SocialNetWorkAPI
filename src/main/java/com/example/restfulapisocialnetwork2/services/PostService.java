@@ -3,17 +3,19 @@ package com.example.restfulapisocialnetwork2.services;
 import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.PostDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
+import com.example.restfulapisocialnetwork2.dtos.PostImageDTO;
 import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.exceptions.PermissionDenyException;
-import com.example.restfulapisocialnetwork2.models.Post;
-import com.example.restfulapisocialnetwork2.models.Report;
-import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.models.*;
+import com.example.restfulapisocialnetwork2.repositories.ImageRepository;
+import com.example.restfulapisocialnetwork2.repositories.LikeRepository;
 import com.example.restfulapisocialnetwork2.repositories.PostRepository;
 import com.example.restfulapisocialnetwork2.repositories.ReportRepository;
 import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
+import com.example.restfulapisocialnetwork2.responses.UserResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +38,8 @@ public class PostService implements IPostService {
     private final UserSession userSession;
     private final ModelMapper modelMapper;
     private final ReportRepository reportRepository;
+    private final LikeRepository likeRepository;
+    private final ImageRepository imageRepository;
 
     public Post createPost(PostDTO postDTO, User user) throws DataNotFoundException {
         Post newPost = Post.builder()
@@ -51,8 +56,9 @@ public class PostService implements IPostService {
             throw new DataIntegrityViolationException("Don't exists this post");
         }
         Post curPost = listPosts.get();
-        User userOwner = userService.GetUser(curPost.getUserId());
-        PostResponse postResponse = PostResponse.fromPost(curPost, userOwner);
+        User user = userSession.GetUser();
+        UserResponse userOwner = userService.GetUser(curPost.getUserId());
+        PostResponse postResponse = PostResponse.fromPost(curPost, userOwner, user.getId());
         return postResponse;
     }
 
@@ -73,8 +79,8 @@ public class PostService implements IPostService {
                 .collect(Collectors.toList());
         List<PostResponse> listPostResponse = new ArrayList<>();
         for (Post post : filteredPosts) {
-            User userOwner = userService.GetUser(post.getUserId());
-            PostResponse postResponse = PostResponse.fromPost(post, userOwner);
+            UserResponse userOwner = userService.GetUser(post.getUserId());
+            PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId());
             listPostResponse.add(postResponse);
         }
         return PostListResponse.builder()
@@ -121,4 +127,29 @@ public class PostService implements IPostService {
                 .build();
         return reportRepository.save(report);
     }
+
+    @Override
+    public Image createPostImage(Long postId, PostImageDTO postImageDTO) throws Exception {
+
+        Post existingPost = postRepository
+                .findById(postImageDTO.getPostId())
+                .orElseThrow(() ->
+                        new DataNotFoundException(
+                                "Cannot find product with id: " + postImageDTO.getPostId()));
+
+        Image newProductImage = Image
+                .builder()
+                .post(existingPost)
+                .linkImage(postImageDTO.getLinkImage())
+                .build();
+
+        // ko cho insert qua 5 anh cho 1 san pham
+        int size = imageRepository.findByPostId(existingPost.getId()).size();
+        if (size >= 5) {
+            throw new InvalidParameterException("Number of images must be <=5");
+        }
+        return imageRepository.save(newProductImage);
+    }
+
+
 }

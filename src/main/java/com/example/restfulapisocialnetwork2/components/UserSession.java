@@ -11,10 +11,12 @@ public class UserSession{
 
     private final UserService userService;
     private String phoneNumber;
+    public String tokenUser;
     private User user;
 
-    public void User(String phoneNumber) throws Exception {
+    public void User(String phoneNumber, String token) throws Exception {
         user= userService.GetUser(phoneNumber);
+        tokenUser=token;
     }
     public User GetUser(){
         return user;

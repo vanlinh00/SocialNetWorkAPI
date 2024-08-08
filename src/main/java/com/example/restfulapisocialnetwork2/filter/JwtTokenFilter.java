@@ -4,6 +4,7 @@ package com.example.restfulapisocialnetwork2.filter;
 import com.example.restfulapisocialnetwork2.components.JwtTokenUtil;
 import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.services.UserService;
 import org.springframework.data.util.Pair;
 
 import jakarta.servlet.FilterChain;
@@ -35,6 +36,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
     private final UserDetailsService userDetailsService;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserSession userSession;
+    private final UserService userService;
 
     // đoạn này sẽ cho t biết như thế  nào thì cho đi qua như thế nào thì phải khiểm tra
     @Override
@@ -43,19 +45,25 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            if (isByPassToken(request)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             final String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                 return;
             }
-            final String token = authHeader.substring(7); // Bearer loai bo 7 ky tu dau tien di
-            final String phoneNumber = jwtTokenUtil.extractPhoneNumber(token);
-            userSession.User(phoneNumber);
-
-            if (isByPassToken(request)) {
-                filterChain.doFilter(request, response);
+            final String token = authHeader.substring(7);
+            if (token != null && userService.isTokenBlacklisted(token)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has been invalidated");
                 return;
             }
+
+            final String phoneNumber = jwtTokenUtil.extractPhoneNumber(token);
+            userSession.User(phoneNumber, token);
+
 
             if (phoneNumber != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User userDetails = (User) userDetailsService.loadUserByUsername(phoneNumber);
@@ -83,8 +91,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {  // mỗi request đ�
 
         final List<Pair<String, String>> bypassTokens
                 = Arrays.asList(
-                Pair.of(String.format("%s/products", apiPrefix), "GET"),   // key và value
-                Pair.of(String.format("%s/categories", apiPrefix), "GET"),
+//                Pair.of(String.format("%s/products", apiPrefix), "GET"),   // key và value
+//                Pair.of(String.format("%s/categories", apiPrefix), "GET"),
                 Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
                 Pair.of(String.format("%s/users/login", apiPrefix), "POST")
         );

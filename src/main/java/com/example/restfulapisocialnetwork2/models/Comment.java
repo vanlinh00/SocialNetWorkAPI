@@ -17,11 +17,14 @@ public class Comment extends BaseEntity {
 
     @Column(name = "user_id")
     private Long userId;
-
-    @Column(name = "post_id")
-    private Long postId;
+//
+//    @Column(name = "post_id")
+//    private Long postId;
 
     @Column(name = "content")
     private String content;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")  // Cột khóa ngoại
+    private Post post;
 }

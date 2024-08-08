@@ -1,5 +1,6 @@
 package com.example.restfulapisocialnetwork2.controllers;
 
+import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.UserDTO;
 import com.example.restfulapisocialnetwork2.dtos.UserLoginDTO;
 import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @Controller
@@ -24,6 +26,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserSession userSession;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(
@@ -63,6 +66,17 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/logout")
+    public ResponseEntity<String> logout() {
+        try {
+            userService.blacklistToken(userSession.tokenUser);
+            return ResponseEntity.ok("Ok");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
     @PostMapping("/sendVerificationCode/{id}")
     public ResponseEntity<String> sendVerificationCode(

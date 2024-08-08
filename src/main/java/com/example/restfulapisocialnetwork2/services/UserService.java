@@ -23,9 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
@@ -40,6 +38,8 @@ public class UserService implements IUserService {
     private final JwtTokenUtil jwtTokenUtil;
     private JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
+
+    private final Set<String> blacklistedTokens = new HashSet<>();
 
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
@@ -93,6 +93,7 @@ public class UserService implements IUserService {
         authenticationManager.authenticate(authenticationToken);
         return jwtTokenUtil.generateToken(existingUser);
     }
+
 
     @Override
     public void sendVerificationCode(long userId) throws DataNotFoundException {
@@ -155,4 +156,14 @@ public class UserService implements IUserService {
         return userResponse;
     }
 
+    @Override
+    // Method to add a token to the blacklist
+    public void blacklistToken(String token) {
+        blacklistedTokens.add(token);
+    }
+
+    // Method to check if a token is blacklisted
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokens.contains(token);
+    }
 }
