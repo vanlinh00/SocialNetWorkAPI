@@ -30,4 +30,8 @@ public class Post extends BaseEntity {
     // OneToMany relationship with Comment
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Comment> comments;
+
+    // OneToMany relationship with Comment
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Image> images;
 }

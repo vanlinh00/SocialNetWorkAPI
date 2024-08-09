@@ -1,5 +1,5 @@
 package com.example.restfulapisocialnetwork2.components;
-import com.example.restfulapisocialnetwork2.exceptions.InvalidParamException;
+import com.example.restfulapisocialnetwork2.exceptions.JwtCreationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -7,7 +7,6 @@ import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.userdetails.UserDetails;
 import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Component;
@@ -44,7 +43,7 @@ public class JwtTokenUtil {
             return token;
         }catch (Exception e) {  // tạo ra token đôi khi nó có thể bị Exception
             //you can "inject" Logger, instead System.out.println
-            throw new InvalidParamException("Cannot create jwt token, error: "+e.getMessage());
+            throw new JwtCreationException("Cannot create JWT token, error: " + e.getMessage());
             //return null;
         }
     }

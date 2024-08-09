@@ -3,8 +3,8 @@ package com.example.restfulapisocialnetwork2.services;
 import com.example.restfulapisocialnetwork2.components.JwtTokenUtil;
 import com.example.restfulapisocialnetwork2.dtos.UserDTO;
 import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
-import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
-import com.example.restfulapisocialnetwork2.exceptions.PermissionDenyException;
+import com.example.restfulapisocialnetwork2.exceptions.InvalidCredentialsException;
+import com.example.restfulapisocialnetwork2.exceptions.ResourceNotFoundException;
 import com.example.restfulapisocialnetwork2.models.Role;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.models.VerificationCode;
@@ -20,13 +20,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.validation.BindingResult;
 
 @AllArgsConstructor
 @Service
@@ -38,16 +36,15 @@ public class UserService implements IUserService {
     private final JwtTokenUtil jwtTokenUtil;
     private JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
-
     private final Set<String> blacklistedTokens = new HashSet<>();
 
     @Override
-    public User createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws Exception {
         String phoneNumber = userDTO.getPhoneNumber();
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("phone number already exists");
         }
-//        // convert from UserDTO=> User
+        // convert from UserDTO=> User
         User newUser = User.builder().fullName(
                         userDTO.getFullName())
                 .phoneNumber(userDTO.getPhoneNumber())
@@ -58,7 +55,8 @@ public class UserService implements IUserService {
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .Email(userDTO.getEmail()
                 ).build();
-        Role role = roleRepository.findById(userDTO.getRoleId()).orElseThrow(() -> new DataNotFoundException("Role not found"));
+        Role role = roleRepository.findById(userDTO.getRoleId()).orElseThrow(
+                () -> new ResourceNotFoundException("Role not found"));
 //        if (role.getName().toUpperCase().equals(Role.ADMIN))
 //        {
 //            throw new PermissionDenyException("You cannot register an admin account");
@@ -79,7 +77,7 @@ public class UserService implements IUserService {
 
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if (optionalUser.isEmpty()) {
-            throw new DataNotFoundException("Invalid phoneNumber or password");
+            throw new InvalidCredentialsException("Invalid phoneNumber or password");
         }
         User existingUser = optionalUser.get();
         if (existingUser.getFacebookAccountId() == 0 && existingUser.getGoogleAccountId() == 0) {
@@ -96,22 +94,25 @@ public class UserService implements IUserService {
 
 
     @Override
-    public void sendVerificationCode(long userId) throws DataNotFoundException {
+    public void sendVerificationCode(long userId) throws Exception {
         String strVerificationCode = generateVerificationCode();
-        User exitingUser = userRepository.findById(userId).orElseThrow(() -> new DataNotFoundException("Cannot find user with id: " + userId));
+        User exitingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cannot find user with id: " + userId)
+                );
         sendVerificationEmail(exitingUser.getEmail(), strVerificationCode);
         VerificationCode verificationCode = VerificationCode.builder().user(exitingUser).vertificationCode(strVerificationCode).build();
         verificationCodeRepository.save(verificationCode);
     }
 
     @Override
-    public String generateVerificationCode() throws DataNotFoundException {
+    public String generateVerificationCode() throws Exception {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
     }
 
-    public void sendVerificationEmail(String toEmail, String verificationCode) throws DataNotFoundException {
+    public void sendVerificationEmail(String toEmail, String verificationCode)
+            throws Exception {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject("Verify Code");
@@ -120,8 +121,11 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public ResponseEntity<?> checkVerifyCode(UserVerificationDTO userVerificationDTO) throws DataNotFoundException {
-        User exitingUser = userRepository.findById(userVerificationDTO.getUserId()).orElseThrow(() -> new DataNotFoundException("Cannot find user with id: " + userVerificationDTO.getUserId()));
+    public ResponseEntity<?> checkVerifyCode(UserVerificationDTO userVerificationDTO)
+            throws Exception {
+        User exitingUser = userRepository.findById(userVerificationDTO.getUserId()).
+                orElseThrow(
+                        () -> new ResourceNotFoundException("Cannot find user with id: " + userVerificationDTO.getUserId()));
 
         List<VerificationCode> ListVerification = verificationCodeRepository.findByUserId(exitingUser.getId());
         if (!ListVerification.isEmpty()) {
@@ -139,7 +143,7 @@ public class UserService implements IUserService {
 
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if (optionalUser.isEmpty()) {
-            throw new DataNotFoundException("Invalid phoneNumber or password");
+            throw new InvalidCredentialsException("Invalid phoneNumber or password");
         }
         User existingUser = optionalUser.get();
         return existingUser;
@@ -149,7 +153,7 @@ public class UserService implements IUserService {
     public UserResponse GetUser(Long id) throws Exception {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
-            throw new DataNotFoundException("Invalid phoneNumber or password");
+            throw new InvalidCredentialsException("Invalid phoneNumber or password");
         }
         User existingUser = optionalUser.get();
         UserResponse userResponse = UserResponse.fromPost(existingUser);
@@ -166,4 +170,5 @@ public class UserService implements IUserService {
     public boolean isTokenBlacklisted(String token) {
         return blacklistedTokens.contains(token);
     }
+
 }

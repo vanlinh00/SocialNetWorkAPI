@@ -1,6 +1,6 @@
 package com.example.restfulapisocialnetwork2.responses;
 
-public class Media {
+public class MediaResponse {
     private long id;
     private String url;
 }

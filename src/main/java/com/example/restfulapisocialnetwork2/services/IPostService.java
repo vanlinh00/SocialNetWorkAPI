@@ -4,26 +4,24 @@ import com.example.restfulapisocialnetwork2.dtos.PostDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostImageDTO;
 import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
-import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
 import com.example.restfulapisocialnetwork2.models.Image;
-import com.example.restfulapisocialnetwork2.models.Post;
 import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 
 public interface IPostService {
-    Post createPost(PostDTO postDTO, User user) throws DataNotFoundException;
+    void createPost(PostDTO postDTO, User user) throws Exception;
 
     PostResponse getPost(long id) throws Exception;
 
     PostListResponse GetListPost(Long index, int count) throws Exception;
 
-    Post updatePost(PostEditDTO postEditDTO) throws Exception;
+    void updatePost(PostEditDTO postEditDTO) throws Exception;
 
-    void deleterPost(Long id) throws DataNotFoundException;
+    void deleterPost(Long id) throws Exception;
 
-    Report reportPost(ReportDTO reportDTO) throws DataNotFoundException;
+    Report reportPost(ReportDTO reportDTO) throws Exception;
 
     Image createPostImage(
             Long postId,

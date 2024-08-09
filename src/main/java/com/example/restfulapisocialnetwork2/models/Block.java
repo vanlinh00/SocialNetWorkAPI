@@ -3,14 +3,14 @@ package com.example.restfulapisocialnetwork2.models;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Table(name = "likes")
+@Table(name = "blocks")
 @Builder
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Like {
+public class Block {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,7 +18,6 @@ public class Like {
     @Column(name = "user_id")
     private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")  // Cột khóa ngoại
-    private Post post;
+    @Column(name = "blocked_user_id")
+    private Long blockedUserId;
 }

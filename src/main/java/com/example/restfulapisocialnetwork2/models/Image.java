@@ -17,8 +17,8 @@ public class Image {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")  // Cột khóa ngoại
     private Post post;
 
     @Column(name = "link_image", length = 300)

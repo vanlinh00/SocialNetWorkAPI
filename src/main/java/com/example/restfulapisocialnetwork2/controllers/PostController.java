@@ -6,12 +6,16 @@ import com.example.restfulapisocialnetwork2.models.Image;
 import com.example.restfulapisocialnetwork2.models.Post;
 import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.responses.ImageListResponse;
+import com.example.restfulapisocialnetwork2.responses.ImageResponse;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import com.example.restfulapisocialnetwork2.services.LikeService;
 import com.example.restfulapisocialnetwork2.services.PostService;
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +25,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.UrlResource;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -54,7 +60,7 @@ public class PostController {
             }
             User user = userSession.GetUser();
             postService.createPost(postDTO, user);
-            return ResponseEntity.ok("Registers succesfully");
+            return ResponseEntity.ok("Upload Post succesfully");
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -70,7 +76,7 @@ public class PostController {
         try {
             PostResponse existingPost = postService.getPost(productId);
             files = files == null ? new ArrayList<MultipartFile>() : files;
-            List<Image> productImages = new ArrayList<>();
+            List<ImageResponse> imageResponseList = new ArrayList<>();
             for (MultipartFile file : files) {
                 if (file.getSize() > 10 * 1024 * 1024) {  // Kích tước > 10MB
                     return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
@@ -86,16 +92,22 @@ public class PostController {
                 String filename = storeFile(file);
 
                 // Luu vao doi tuong product trong DB
-                Image productImage = postService.createPostImage(
+                Image image = postService.createPostImage(
                         existingPost.getId(),
                         PostImageDTO.builder()
                                 .postId(existingPost.getId())
                                 .linkImage(filename)
                                 .build()
                 );
-                productImages.add(productImage);
+                imageResponseList.add(ImageResponse.fromImage(image));
+
             }
-            return ResponseEntity.ok().body(productImages);
+
+            return ResponseEntity.ok().body(
+                    ImageListResponse.builder()
+                            .imageResponseList(imageResponseList)
+                            .countImage(imageResponseList.size()).build()
+            );
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -119,7 +131,6 @@ public class PostController {
 
         return uniqueFileName;
     }
-
 
     @GetMapping("/get_post/{id}")
     public ResponseEntity<?> getPost(
@@ -182,8 +193,8 @@ public class PostController {
                         .toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
-            Post post = postService.updatePost(postEditDTO);
-            return ResponseEntity.ok(post);
+            postService.updatePost(postEditDTO);
+            return ResponseEntity.ok("Edit Post Succesfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

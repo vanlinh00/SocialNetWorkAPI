@@ -5,14 +5,9 @@ import com.example.restfulapisocialnetwork2.dtos.PostDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
 import com.example.restfulapisocialnetwork2.dtos.PostImageDTO;
 import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
-import com.example.restfulapisocialnetwork2.exceptions.DataNotFoundException;
-import com.example.restfulapisocialnetwork2.exceptions.PermissionDenyException;
+import com.example.restfulapisocialnetwork2.exceptions.*;
 import com.example.restfulapisocialnetwork2.models.*;
-import com.example.restfulapisocialnetwork2.repositories.ImageRepository;
-import com.example.restfulapisocialnetwork2.repositories.LikeRepository;
-import com.example.restfulapisocialnetwork2.repositories.PostRepository;
-import com.example.restfulapisocialnetwork2.repositories.ReportRepository;
-import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
+import com.example.restfulapisocialnetwork2.repositories.*;
 import com.example.restfulapisocialnetwork2.responses.PostListResponse;
 import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import com.example.restfulapisocialnetwork2.responses.UserResponse;
@@ -40,25 +35,27 @@ public class PostService implements IPostService {
     private final ReportRepository reportRepository;
     private final LikeRepository likeRepository;
     private final ImageRepository imageRepository;
+    private final BlockRepository blockRepository;
 
-    public Post createPost(PostDTO postDTO, User user) throws DataNotFoundException {
+    public void createPost(PostDTO postDTO, User user) throws Exception {
         Post newPost = Post.builder()
                 .userId(user.getId())
                 .described(postDTO.getDescribed())
                 .build();
-        return postRepository.save(newPost);
+        postRepository.save(newPost);
     }
 
     @Override
     public PostResponse getPost(long id) throws Exception {
         Optional<Post> listPosts = postRepository.findById(id);
         if (listPosts.isEmpty()) {
-            throw new DataIntegrityViolationException("Don't exists this post");
+            new ResourceNotFoundException("This post does not exist");
         }
         Post curPost = listPosts.get();
         User user = userSession.GetUser();
         UserResponse userOwner = userService.GetUser(curPost.getUserId());
-        PostResponse postResponse = PostResponse.fromPost(curPost, userOwner, user.getId());
+        boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(user.getId(), curPost.getUserId());
+        PostResponse postResponse = PostResponse.fromPost(curPost, userOwner, user.getId(), blockUser);
         return postResponse;
     }
 
@@ -70,17 +67,18 @@ public class PostService implements IPostService {
         // Page<Post> pageResult = postRepository.findAll(pageRequest);
         Page<Post> pageResult = postRepository.findByUserId(userSession.GetUser().getId(), pageRequest);
         if (pageResult.isEmpty()) {
-            throw new DataIntegrityViolationException("Don't exists this post");
+            new ResourceNotFoundException("This post does not exist");
         }
         List<Post> posts = pageResult.getContent();
         List<Post> filteredPosts = posts.stream()
-                .skip(index)  // Bỏ qua bản ghi đầu tiên
-                .limit(count) // Lấy 3 bản ghi tiếp theo
+                .skip(index)
+                .limit(count)
                 .collect(Collectors.toList());
         List<PostResponse> listPostResponse = new ArrayList<>();
         for (Post post : filteredPosts) {
             UserResponse userOwner = userService.GetUser(post.getUserId());
-            PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId());
+            boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(userSession.GetUser().getId(), post.getUserId());
+            PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId(), blockUser);
             listPostResponse.add(postResponse);
         }
         return PostListResponse.builder()
@@ -90,25 +88,27 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public Post updatePost(PostEditDTO postEditDTO) throws DataNotFoundException {
-        Post post = postRepository.findById(postEditDTO.getId()).orElseThrow(
-                () -> new DataNotFoundException("Cannot find order with it: " + postEditDTO.getId()));
+    public void updatePost(PostEditDTO postEditDTO) throws Exception {
+        Post post = postRepository.findById(postEditDTO.getId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Cannot find order with it: " + postEditDTO.getId())
+                );
 
-        if (post.getUserId() == userSession.GetUser().getId()) {
-            new PermissionDenyException("Not Access");
+        if (post.getUserId() != userSession.GetUser().getId()) {
+            throw new ForbiddenAccessException("You are not authorized to perform this action");
         }
         modelMapper.typeMap(PostEditDTO.class, Post.class)
                 .addMappings(
                         mapper -> mapper.skip(Post::setId)
                 );
         modelMapper.map(postEditDTO, post);
-        return postRepository.save(post);
     }
 
     @Override
-    public void deleterPost(Long id) throws DataNotFoundException {
+    public void deleterPost(Long id) throws Exception {
         Post post = postRepository.findById(id).orElseThrow(
-                () -> new DataNotFoundException("Cannot find order with it: " + id));
+                () -> new ResourceNotFoundException("Cannot find order with it: " + id));
         // no hard-delete, => please soft-delete
         if (post != null) {
             postRepository.deleteById(id);
@@ -117,9 +117,12 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public Report reportPost(ReportDTO reportDTO) throws DataNotFoundException {
-        Post post = postRepository.findById(reportDTO.getId()).orElseThrow(
-                () -> new DataNotFoundException("Cannot find order with it: " + reportDTO.getId()));
+    public Report reportPost(ReportDTO reportDTO) throws Exception {
+        Post post = postRepository.findById(reportDTO.getId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Cannot find order with it: " + reportDTO.getId())
+                );
         Report report = Report.builder()
                 .userId(userSession.GetUser().getId())
                 .postId(reportDTO.getId())
@@ -134,19 +137,16 @@ public class PostService implements IPostService {
         Post existingPost = postRepository
                 .findById(postImageDTO.getPostId())
                 .orElseThrow(() ->
-                        new DataNotFoundException(
-                                "Cannot find product with id: " + postImageDTO.getPostId()));
-
+                        new ResourceNotFoundException("Cannot find product with id: " + postImageDTO.getPostId())
+                );
         Image newProductImage = Image
                 .builder()
                 .post(existingPost)
                 .linkImage(postImageDTO.getLinkImage())
                 .build();
-
-        // ko cho insert qua 5 anh cho 1 san pham
         int size = imageRepository.findByPostId(existingPost.getId()).size();
         if (size >= 5) {
-            throw new InvalidParameterException("Number of images must be <=5");
+            new BadRequestException("Number of images must be <=5");
         }
         return imageRepository.save(newProductImage);
     }
