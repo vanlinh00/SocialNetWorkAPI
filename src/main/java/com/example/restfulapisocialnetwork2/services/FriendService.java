@@ -43,7 +43,9 @@ public class FriendService implements IFriendService {
         }
         User user = userSession.GetUser();
         if (requestedFriendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)
-                || friendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)
+                || friendRepository.existsByUserIdAAndUserIdBOrUserIdAAndUserIdB(
+                user.getId(), userIdFriend
+                , userIdFriend, user.getId())
         ) {
             throw new DataAlreadyExistsException("This data exist");
         }
@@ -72,7 +74,6 @@ public class FriendService implements IFriendService {
 
         List<FriendResponse> listFriendResponse = new ArrayList<>();
         for (RequestedFriend rqFriend : filteredPosts) {
-
             Optional<User> userOptional = userRepository.findById(rqFriend.getUserIdB());
             User userB = userOptional.get();
             FriendResponse friendResponse = FriendResponse
@@ -121,7 +122,7 @@ public class FriendService implements IFriendService {
 
         Long idUserGetFriend = (requestFriendDTO.getUserId() == 0) ? userSession.GetUser().getId() : requestFriendDTO.getUserId();
         Page<Friend> pageResult =
-                friendRepository.findByUserIdA(idUserGetFriend, pageRequest);
+                friendRepository.findByUserId(idUserGetFriend, pageRequest);
         if (pageResult.isEmpty()) {
             throw new ResourceNotFoundException("This user does not exist");
         }
@@ -134,13 +135,14 @@ public class FriendService implements IFriendService {
         List<FriendResponse> listFriendResponse = new ArrayList<>();
 
         for (Friend rqFriend : filteredPosts) {
-            Optional<User> userOptional = userRepository.findById(rqFriend.getUserIdB());
-            User userB = userOptional.get();
+            Long idFriend = (rqFriend.getUserIdA() == idUserGetFriend) ? rqFriend.getUserIdB() : rqFriend.getUserIdA();
+            Optional<User> userOptional = userRepository.findById(idFriend);
+            User userFriends = userOptional.get();
             FriendResponse friendResponse = FriendResponse
                     .builder()
-                    .id(userB.getId())
-                    .userName(userB.getFullName())
-                    .avatar(userB.getAddress())
+                    .id(userFriends.getId())
+                    .userName(userFriends.getFullName())
+                    .avatar(userFriends.getAddress())
                     .build();
             listFriendResponse.add(friendResponse);
         }
@@ -167,7 +169,9 @@ public class FriendService implements IFriendService {
         }
         User user = userOp.get();
         long countFriend = friendRepository.countByUserIdA(userIdFriend);
-        int isFriend = (friendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)) ? 1 : 0;
+        int isFriend = (friendRepository.existsByUserIdAAndUserIdBOrUserIdAAndUserIdB(
+                user.getId(), userIdFriend
+                , userIdFriend, user.getId())) ? 1 : 0;
         DataFriendUserDTO dataFriendUserDTO = DataFriendUserDTO.
                 builder()
                 .is_friend(isFriend)
