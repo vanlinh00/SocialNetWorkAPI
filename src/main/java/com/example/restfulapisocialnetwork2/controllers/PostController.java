@@ -100,9 +100,7 @@ public class PostController {
                                 .build()
                 );
                 imageResponseList.add(ImageResponse.fromImage(image));
-
             }
-
             return ResponseEntity.ok().body(
                     ImageListResponse.builder()
                             .imageResponseList(imageResponseList)

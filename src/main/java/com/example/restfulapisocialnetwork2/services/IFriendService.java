@@ -13,4 +13,7 @@ public interface IFriendService {
 
     void SetAcceptFriend(AcceptFriendDTO acceptFriendDTO) throws Exception;
 
+    FriendListResponse GetUserFriends(RequestFriendDTO requestFriendDTO) throws Exception;
+
+    int getUserInfo(Long userIdFriend) throws Exception;
 }

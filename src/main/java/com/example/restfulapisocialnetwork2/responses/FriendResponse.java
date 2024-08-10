@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Builder
 @Setter
 @Getter
@@ -13,5 +15,5 @@ public class FriendResponse {
     private Long id;
     private String userName;
     private String avatar;
-    private String created;
+    private LocalDateTime created;
 }
