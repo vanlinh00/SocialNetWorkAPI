@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Data
-public class Friend extends BaseEntity {
+public class Friend {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

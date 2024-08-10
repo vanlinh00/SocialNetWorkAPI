@@ -146,7 +146,7 @@ public class PostService implements IPostService {
                 .build();
         int size = imageRepository.findByPostId(existingPost.getId()).size();
         if (size >= 5) {
-            new BadRequestException("Number of images must be <=5");
+            throw    new BadRequestException("Number of images must be <=5");
         }
         return imageRepository.save(newProductImage);
     }

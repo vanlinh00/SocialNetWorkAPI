@@ -7,6 +7,7 @@ import com.example.restfulapisocialnetwork2.models.Friend;
 import com.example.restfulapisocialnetwork2.models.RequestedFriend;
 import com.example.restfulapisocialnetwork2.responses.CommentListResponse;
 import com.example.restfulapisocialnetwork2.responses.FriendListResponse;
+import com.example.restfulapisocialnetwork2.responses.UserInfoResponse;
 import com.example.restfulapisocialnetwork2.services.FriendService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -88,8 +89,8 @@ public class FriendController {
             @PathVariable long id
     ) {
         try {
-            friendService.SetRequestFriend(id);
-            return ResponseEntity.ok("OK");
+            UserInfoResponse userInfoResponse = friendService.GetUserInfo(id);
+            return ResponseEntity.ok(userInfoResponse);
         } catch (Exception e) {
 
             return ResponseEntity.badRequest().body(e.getMessage());

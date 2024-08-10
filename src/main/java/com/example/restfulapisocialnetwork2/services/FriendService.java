@@ -3,6 +3,7 @@ package com.example.restfulapisocialnetwork2.services;
 import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.AcceptFriendDTO;
 import com.example.restfulapisocialnetwork2.dtos.CommentDTO;
+import com.example.restfulapisocialnetwork2.dtos.DataFriendUserDTO;
 import com.example.restfulapisocialnetwork2.dtos.RequestFriendDTO;
 import com.example.restfulapisocialnetwork2.exceptions.DataAlreadyExistsException;
 import com.example.restfulapisocialnetwork2.exceptions.ForbiddenAccessException;
@@ -10,8 +11,10 @@ import com.example.restfulapisocialnetwork2.exceptions.ResourceNotFoundException
 import com.example.restfulapisocialnetwork2.models.*;
 import com.example.restfulapisocialnetwork2.repositories.FriendRepository;
 import com.example.restfulapisocialnetwork2.repositories.RequestedFriendRepository;
+import com.example.restfulapisocialnetwork2.repositories.UserInfoRepository;
 import com.example.restfulapisocialnetwork2.repositories.UserRepository;
 import com.example.restfulapisocialnetwork2.responses.*;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class FriendService implements IFriendService {
     private final RequestedFriendRepository requestedFriendRepository;
     private final FriendRepository friendRepository;
+    private final UserInfoRepository userInfoRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final UserSession userSession;
@@ -35,11 +39,13 @@ public class FriendService implements IFriendService {
     public int SetRequestFriend(Long userIdFriend) throws Exception {
         Optional<User> userFriend = userRepository.findById(userIdFriend);
         if (userFriend.isEmpty()) {
-            new ResourceNotFoundException("This user does not exist");
+            throw new ResourceNotFoundException("This user does not exist");
         }
         User user = userSession.GetUser();
-        if (requestedFriendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)) {
-            new DataAlreadyExistsException("This data exist");
+        if (requestedFriendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)
+                || friendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)
+        ) {
+            throw new DataAlreadyExistsException("This data exist");
         }
         RequestedFriend requestedFriend = RequestedFriend.builder()
                 .userIdA(user.getId())
@@ -56,7 +62,7 @@ public class FriendService implements IFriendService {
         PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
         Page<RequestedFriend> pageResult = requestedFriendRepository.findByUserIdA(userSession.GetUser().getId(), pageRequest);
         if (pageResult.isEmpty()) {
-            new ResourceNotFoundException("This user does not exist");
+            throw new ResourceNotFoundException("This user does not exist");
         }
         List<RequestedFriend> requestedFriend = pageResult.getContent();
         List<RequestedFriend> filteredPosts = requestedFriend.stream()
@@ -85,25 +91,27 @@ public class FriendService implements IFriendService {
     }
 
     @Override
+    @Transactional
     public void SetAcceptFriend(AcceptFriendDTO acceptFriendDTO) throws Exception {
-
         Optional<User> userFriendOptional = userRepository.findById(acceptFriendDTO.getUserId());
         if (userFriendOptional.isEmpty()) {
-            new ResourceNotFoundException("This user does not exist");
+            throw new ResourceNotFoundException("This user does not exist");
         }
-        User user = userFriendOptional.get();
-        User currentUser = userSession.GetUser();
-        requestedFriendRepository.deleteByUserIdAAndUserIdB(
-                currentUser.getId(), acceptFriendDTO.getUserId());
-        if (acceptFriendDTO.getIsAccept() == 1) {
-            Friend friend = Friend.builder()
-                    .userIdA(currentUser.getId())
-                    .userIdB(acceptFriendDTO.getUserId())
-                    .build();
-            friendRepository.save(friend);
+        User userFriend = userFriendOptional.get();
+        User userLogin = userSession.GetUser();
+        if (requestedFriendRepository.existsByUserIdAAndUserIdB(userLogin.getId(), userFriend.getId())) {
+            requestedFriendRepository.deleteByUserIdAAndUserIdB(
+                    userLogin.getId(), acceptFriendDTO.getUserId());
+            if (acceptFriendDTO.getIsAccept() == 1) {
+                Friend friend = Friend.builder()
+                        .userIdA(userLogin.getId())
+                        .userIdB(acceptFriendDTO.getUserId())
+                        .build();
+                friendRepository.save(friend);
+            }
+        } else {
+            throw new ResourceNotFoundException("This request does not exist");
         }
-        // else if (acceptFriendDTO.getIsAccept() == 0) {
-//        }
     }
 
     @Override
@@ -115,7 +123,7 @@ public class FriendService implements IFriendService {
         Page<Friend> pageResult =
                 friendRepository.findByUserIdA(idUserGetFriend, pageRequest);
         if (pageResult.isEmpty()) {
-            new ResourceNotFoundException("This user does not exist");
+            throw new ResourceNotFoundException("This user does not exist");
         }
 
         List<Friend> listFriend = pageResult.getContent();
@@ -133,7 +141,6 @@ public class FriendService implements IFriendService {
                     .id(userB.getId())
                     .userName(userB.getFullName())
                     .avatar(userB.getAddress())
-                    .created(rqFriend.getCreatedAt())
                     .build();
             listFriendResponse.add(friendResponse);
         }
@@ -145,22 +152,31 @@ public class FriendService implements IFriendService {
     }
 
     @Override
-    public int getUserInfo(Long userIdFriend) throws Exception {
-        Optional<User> userFriend = userRepository.findById(userIdFriend);
-        if (userFriend.isEmpty()) {
-            new ResourceNotFoundException("This user does not exist");
+    public UserInfoResponse GetUserInfo(Long userIdFriend) throws Exception {
+        User userLogin = userSession.GetUser();
+        Long idUserGetInFor = (userIdFriend == 0) ? userLogin.getId() : userIdFriend;
+        Optional<User> userOp = userRepository.findById(idUserGetInFor);
+        if (userOp.isEmpty()) {
+            throw new ResourceNotFoundException("This user does not exist");
         }
-        User user = userSession.GetUser();
-        if (requestedFriendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)) {
-            new DataAlreadyExistsException("This data exist");
+        Optional<UserInfo> userInfoOp = userInfoRepository.findByUserId(idUserGetInFor);
+        UserInfo userInfo = new UserInfo();
+        if (!userInfoOp.isEmpty()) {
+            userInfo = userInfoOp.get();
+            //throw  new ResourceNotFoundException("This user does not exist");
         }
-        RequestedFriend requestedFriend = RequestedFriend.builder()
-                .userIdA(user.getId())
-                .userIdB(userIdFriend)
+        User user = userOp.get();
+        long countFriend = friendRepository.countByUserIdA(userIdFriend);
+        int isFriend = (friendRepository.existsByUserIdAAndUserIdB(user.getId(), userIdFriend)) ? 1 : 0;
+        DataFriendUserDTO dataFriendUserDTO = DataFriendUserDTO.
+                builder()
+                .is_friend(isFriend)
+                .listing(countFriend)
                 .build();
-        requestedFriendRepository.save(requestedFriend);
-        List<RequestedFriend> requestedFriendList = requestedFriendRepository.findByUserIdA(user.getId());
-        return requestedFriendList.size();
+        UserInfoResponse userInfoResponse = UserInfoResponse.
+                fromUser(user, dataFriendUserDTO, userInfo);
+        return userInfoResponse;
     }
+
 }
 

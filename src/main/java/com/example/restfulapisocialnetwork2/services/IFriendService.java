@@ -4,7 +4,9 @@ import com.example.restfulapisocialnetwork2.dtos.AcceptFriendDTO;
 import com.example.restfulapisocialnetwork2.dtos.CommentDTO;
 import com.example.restfulapisocialnetwork2.dtos.RequestFriendDTO;
 import com.example.restfulapisocialnetwork2.models.Comment;
+import com.example.restfulapisocialnetwork2.responses.BaseReponse;
 import com.example.restfulapisocialnetwork2.responses.FriendListResponse;
+import com.example.restfulapisocialnetwork2.responses.UserInfoResponse;
 
 public interface IFriendService {
     int SetRequestFriend(Long userId) throws Exception;
@@ -15,5 +17,5 @@ public interface IFriendService {
 
     FriendListResponse GetUserFriends(RequestFriendDTO requestFriendDTO) throws Exception;
 
-    int getUserInfo(Long userIdFriend) throws Exception;
+    UserInfoResponse GetUserInfo(Long userIdFriend) throws Exception;
 }

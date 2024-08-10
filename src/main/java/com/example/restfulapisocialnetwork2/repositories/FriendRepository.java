@@ -11,4 +11,7 @@ import java.util.List;
 
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     Page<Friend> findByUserIdA(@Param("userIdA") Long userIdA, Pageable pageable);
+    boolean existsByUserIdAAndUserIdB( Long userIdA, Long userIdB);
+
+    long countByUserIdA(Long userIdA);
 }

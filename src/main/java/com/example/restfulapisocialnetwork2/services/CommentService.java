@@ -35,7 +35,7 @@ public class CommentService implements ICommentService {
 
         Optional<Post> listPosts = postRepository.findById(commentDTO.getId());
         if (listPosts.isEmpty()) {
-            new ResourceNotFoundException("This post does not exist");
+            throw      new ResourceNotFoundException("This post does not exist");
         }
         Post currentPos = listPosts.get();
 
@@ -72,7 +72,7 @@ public class CommentService implements ICommentService {
     public void DeleteComment(DeleteCommentDTO deleteCommentDTO) throws Exception {
         Optional<Post> listPosts = postRepository.findById(deleteCommentDTO.getId());
         if (listPosts.isEmpty()) {
-            new ResourceNotFoundException("This post does not exist");
+            throw    new ResourceNotFoundException("This post does not exist");
         }
         Post currentPost = listPosts.get();
         if (currentPost.getUserId() == userSession.GetUser().getId()) {
@@ -92,7 +92,7 @@ public class CommentService implements ICommentService {
 
         Optional<Post> listPosts = postRepository.findById(editCommentDTO.getId());
         if (listPosts.isEmpty()) {
-            new ResourceNotFoundException("This post does not exist");
+            throw  new ResourceNotFoundException("This post does not exist");
         }
         Comment comment = commentRepository
                 .findByUserIdAndPostId(editCommentDTO.getId(), editCommentDTO.getIdCom())
