@@ -1,14 +1,18 @@
 package com.example.restfulapisocialnetwork2.services;
 
 import com.example.restfulapisocialnetwork2.components.JwtTokenUtil;
+import com.example.restfulapisocialnetwork2.components.UserSession;
 import com.example.restfulapisocialnetwork2.dtos.UserDTO;
+import com.example.restfulapisocialnetwork2.dtos.UserInfoDTO;
 import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
 import com.example.restfulapisocialnetwork2.exceptions.InvalidCredentialsException;
 import com.example.restfulapisocialnetwork2.exceptions.ResourceNotFoundException;
 import com.example.restfulapisocialnetwork2.models.Role;
 import com.example.restfulapisocialnetwork2.models.User;
+import com.example.restfulapisocialnetwork2.models.UserInfo;
 import com.example.restfulapisocialnetwork2.models.VerificationCode;
 import com.example.restfulapisocialnetwork2.repositories.RoleRepository;
+import com.example.restfulapisocialnetwork2.repositories.UserInfoRepository;
 import com.example.restfulapisocialnetwork2.repositories.UserRepository;
 import com.example.restfulapisocialnetwork2.repositories.VerificationCodeRepository;
 import com.example.restfulapisocialnetwork2.responses.UserResponse;
@@ -20,6 +24,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -37,6 +43,8 @@ public class UserService implements IUserService {
     private JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
     private final Set<String> blacklistedTokens = new HashSet<>();
+    private final UserInfoRepository userInfoRepository;
+
 
     @Override
     public User createUser(UserDTO userDTO) throws Exception {
@@ -139,7 +147,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User GetUser(String phoneNumber) throws Exception {
+    public User getUser(String phoneNumber) throws Exception {
 
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if (optionalUser.isEmpty()) {
@@ -150,7 +158,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public UserResponse GetUser(Long id) throws Exception {
+    public UserResponse getUser(Long id) throws Exception {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isEmpty()) {
             throw new InvalidCredentialsException("Invalid phoneNumber or password");
@@ -159,6 +167,7 @@ public class UserService implements IUserService {
         UserResponse userResponse = UserResponse.fromPost(existingUser);
         return userResponse;
     }
+
 
     @Override
     // Method to add a token to the blacklist

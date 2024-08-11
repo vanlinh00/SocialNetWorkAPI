@@ -91,6 +91,7 @@ public class CommentController {
                         .stream()
                         .map(FieldError::getDefaultMessage)
                         .toList();
+
                 return ResponseEntity.badRequest().body(errorMessages);
             }
             return null;

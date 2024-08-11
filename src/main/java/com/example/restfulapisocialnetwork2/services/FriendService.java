@@ -1,10 +1,7 @@
 package com.example.restfulapisocialnetwork2.services;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
-import com.example.restfulapisocialnetwork2.dtos.AcceptFriendDTO;
-import com.example.restfulapisocialnetwork2.dtos.CommentDTO;
-import com.example.restfulapisocialnetwork2.dtos.DataFriendUserDTO;
-import com.example.restfulapisocialnetwork2.dtos.RequestFriendDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
 import com.example.restfulapisocialnetwork2.exceptions.DataAlreadyExistsException;
 import com.example.restfulapisocialnetwork2.exceptions.ForbiddenAccessException;
 import com.example.restfulapisocialnetwork2.exceptions.ResourceNotFoundException;
@@ -16,6 +13,7 @@ import com.example.restfulapisocialnetwork2.repositories.UserRepository;
 import com.example.restfulapisocialnetwork2.responses.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -34,6 +32,7 @@ public class FriendService implements IFriendService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final UserSession userSession;
+    private final ModelMapper modelMapper;
 
     @Override
     public int SetRequestFriend(Long userIdFriend) throws Exception {
@@ -120,67 +119,141 @@ public class FriendService implements IFriendService {
             throws Exception {
         PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
 
-        Long idUserGetFriend = (requestFriendDTO.getUserId() == 0) ? userSession.GetUser().getId() : requestFriendDTO.getUserId();
-        Page<Friend> pageResult =
-                friendRepository.findByUserId(idUserGetFriend, pageRequest);
+        Long idUserGetFriend = (requestFriendDTO.getUserId() == 0)
+                ? userSession.GetUser().getId()
+                : requestFriendDTO.getUserId();
+
+        Page<Friend> pageResult = friendRepository.findByUserId(idUserGetFriend, pageRequest);
+
         if (pageResult.isEmpty()) {
             throw new ResourceNotFoundException("This user does not exist");
         }
 
-        List<Friend> listFriend = pageResult.getContent();
-        List<Friend> filteredPosts = listFriend.stream()
+        List<Friend> filteredFriends = pageResult.getContent().stream()
                 .skip(requestFriendDTO.getIndex())
                 .limit(requestFriendDTO.getCount())
                 .collect(Collectors.toList());
-        List<FriendResponse> listFriendResponse = new ArrayList<>();
 
-        for (Friend rqFriend : filteredPosts) {
-            Long idFriend = (rqFriend.getUserIdA() == idUserGetFriend) ? rqFriend.getUserIdB() : rqFriend.getUserIdA();
-            Optional<User> userOptional = userRepository.findById(idFriend);
-            User userFriends = userOptional.get();
-            FriendResponse friendResponse = FriendResponse
-                    .builder()
-                    .id(userFriends.getId())
-                    .userName(userFriends.getFullName())
-                    .avatar(userFriends.getAddress())
-                    .build();
-            listFriendResponse.add(friendResponse);
-        }
+        List<FriendResponse> listFriendResponse = filteredFriends.stream()
+                .map(friend -> {
+                    Long idFriend = (friend.getUserIdA() == idUserGetFriend)
+                            ? friend.getUserIdB()
+                            : friend.getUserIdA();
+
+                    User userFriend = userRepository.findById(idFriend)
+                            .orElseThrow(() -> new ResourceNotFoundException("Friend user not found"));
+
+                    return FriendResponse.builder()
+                            .id(userFriend.getId())
+                            .userName(userFriend.getFullName())
+                            .avatar(userFriend.getAddress())
+                            .build();
+                })
+                .collect(Collectors.toList());
 
         return FriendListResponse.builder()
                 .postResponseList(listFriendResponse)
                 .countFriend(listFriendResponse.size())
                 .build();
+
+
+//        PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
+//
+//        Long idUserGetFriend = (requestFriendDTO.getUserId() == 0) ? userSession.GetUser().getId() : requestFriendDTO.getUserId();
+//        Page<Friend> pageResult =
+//                friendRepository.findByUserId(idUserGetFriend, pageRequest);
+//        if (pageResult.isEmpty()) {
+//            throw new ResourceNotFoundException("This user does not exist");
+//        }
+//        List<Friend> listFriend = pageResult.getContent();
+//        List<Friend> filteredPosts = listFriend.stream()
+//                .skip(requestFriendDTO.getIndex())
+//                .limit(requestFriendDTO.getCount())
+//                .collect(Collectors.toList());
+//        List<FriendResponse> listFriendResponse = new ArrayList<>();
+//
+//        for (Friend rqFriend : filteredPosts) {
+//            Long idFriend = (rqFriend.getUserIdA() == idUserGetFriend) ? rqFriend.getUserIdB() : rqFriend.getUserIdA();
+//            Optional<User> userOptional = userRepository.findById(idFriend);
+//            User userFriends = userOptional.get();
+//            FriendResponse friendResponse = FriendResponse
+//                    .builder()
+//                    .id(userFriends.getId())
+//                    .userName(userFriends.getFullName())
+//                    .avatar(userFriends.getAddress())
+//                    .build();
+//            listFriendResponse.add(friendResponse);
+//        }
+//
+//        return FriendListResponse.builder()
+//                .postResponseList(listFriendResponse)
+//                .countFriend(listFriendResponse.size())
+//                .build();
     }
 
     @Override
     public UserInfoResponse GetUserInfo(Long userIdFriend) throws Exception {
         User userLogin = userSession.GetUser();
-        Long idUserGetInFor = (userIdFriend == 0) ? userLogin.getId() : userIdFriend;
-        Optional<User> userOp = userRepository.findById(idUserGetInFor);
-        if (userOp.isEmpty()) {
-            throw new ResourceNotFoundException("This user does not exist");
-        }
-        Optional<UserInfo> userInfoOp = userInfoRepository.findByUserId(idUserGetInFor);
-        UserInfo userInfo = new UserInfo();
-        if (!userInfoOp.isEmpty()) {
-            userInfo = userInfoOp.get();
-            //throw  new ResourceNotFoundException("This user does not exist");
-        }
-        User user = userOp.get();
-        long countFriend = friendRepository.countByUserIdA(userIdFriend);
-        int isFriend = (friendRepository.existsByUserIdAAndUserIdBOrUserIdAAndUserIdB(
-                user.getId(), userIdFriend
-                , userIdFriend, user.getId())) ? 1 : 0;
-        DataFriendUserDTO dataFriendUserDTO = DataFriendUserDTO.
-                builder()
+        Long idUserGetInfo = (userIdFriend == 0) ? userLogin.getId() : userIdFriend;
+
+        User user = userRepository.findById(idUserGetInfo)
+                .orElseThrow(() -> new ResourceNotFoundException("This user does not exist"));
+
+        UserInfo userInfo = userInfoRepository.findByUserId(idUserGetInfo).orElse(new UserInfo());
+
+        long countFriend = friendRepository.countByUserIdA(idUserGetInfo);
+        int isFriend = friendRepository.existsByUserIdAAndUserIdBOrUserIdAAndUserIdB(userLogin.getId(), idUserGetInfo, idUserGetInfo, userLogin.getId()) ? 1 : 0;
+
+        DataFriendUserDTO dataFriendUserDTO = DataFriendUserDTO.builder()
                 .is_friend(isFriend)
                 .listing(countFriend)
                 .build();
-        UserInfoResponse userInfoResponse = UserInfoResponse.
-                fromUser(user, dataFriendUserDTO, userInfo);
-        return userInfoResponse;
+        return UserInfoResponse.fromUser(user, dataFriendUserDTO, userInfo);
     }
 
-}
+    @Override
+    public UserInfo SetUserInfo(UserInfoDTO userInfoDTO) throws Exception {
+        User userLogin = userSession.GetUser();
+        if (userInfoRepository.existsByUserId(userLogin.getId())) {
+            throw new ResourceNotFoundException("Data already exists");
+        }
+        UserInfo userInfo = UserInfo
+                .builder()
+                .userId(userLogin.getId())
+                .description(userInfoDTO.getDescription())
+                .avatar(userInfoDTO.getAvatar())
+                .coverImage(userInfoDTO.getCoverImage())
+                .city(userInfoDTO.getCity())
+                .country(userInfoDTO.getCountry())
+                .link(userInfoDTO.getLink())
+                .build();
+        return userInfoRepository.save(userInfo);
+    }
 
+    @Override
+    public void EditUserInfo(UserInfoDTO userInfoDTO) throws Exception {
+        User userLogin = userSession.GetUser();
+        User user = userRepository.findById(userLogin.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("This user does not exist"));
+
+        if (!userInfoRepository.existsByUserId(user.getId())) {
+            throw new ResourceNotFoundException("This user infor does not exist");
+        }
+        Optional<UserInfo> userInfoOp = userInfoRepository.findByUserId(userLogin.getId());
+        UserInfo userInfo = userInfoOp.get();
+        modelMapper.typeMap(UserInfoDTO.class, UserInfo.class)
+                .addMappings(
+                        mapper -> mapper.skip(UserInfo::setId)
+                );
+        modelMapper.map(userInfoDTO, userInfo);
+
+        modelMapper.typeMap(UserInfoDTO.class, User.class)
+                .addMappings(
+                        mapper -> mapper.skip(User::setId)
+                );
+        modelMapper.map(userInfoDTO, user);
+
+        userInfoRepository.save(userInfo);
+        userRepository.save(user);
+    }
+}

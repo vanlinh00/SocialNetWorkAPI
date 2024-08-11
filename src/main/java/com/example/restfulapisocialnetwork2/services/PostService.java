@@ -1,10 +1,7 @@
 package com.example.restfulapisocialnetwork2.services;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
-import com.example.restfulapisocialnetwork2.dtos.PostDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostImageDTO;
-import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
 import com.example.restfulapisocialnetwork2.exceptions.*;
 import com.example.restfulapisocialnetwork2.models.*;
 import com.example.restfulapisocialnetwork2.repositories.*;
@@ -13,12 +10,11 @@ import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import com.example.restfulapisocialnetwork2.responses.UserResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +49,7 @@ public class PostService implements IPostService {
         }
         Post curPost = listPosts.get();
         User user = userSession.GetUser();
-        UserResponse userOwner = userService.GetUser(curPost.getUserId());
+        UserResponse userOwner = userService.getUser(curPost.getUserId());
         boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(user.getId(), curPost.getUserId());
         PostResponse postResponse = PostResponse.fromPost(curPost, userOwner, user.getId(), blockUser);
         return postResponse;
@@ -61,22 +57,24 @@ public class PostService implements IPostService {
 
     @Override
     public PostListResponse GetListPost(Long index, int count) throws Exception {
-        // int pageIndex = index.intValue();
-        //       int pageSize = count;
-        PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
-        // Page<Post> pageResult = postRepository.findAll(pageRequest);
-        Page<Post> pageResult = postRepository.findByUserId(userSession.GetUser().getId(), pageRequest);
+
+        //   PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE);
+        //   Page<Post> pageResult = postRepository.findByUserId(userSession.GetUser().getId(), pageRequest);
+
+        Pageable pageable = PageRequest.of((int) (index - 1), count);
+        Page<Post> pageResult = postRepository.findAll(pageable);
         if (pageResult.isEmpty()) {
             new ResourceNotFoundException("This post does not exist");
         }
+
         List<Post> posts = pageResult.getContent();
-        List<Post> filteredPosts = posts.stream()
-                .skip(index)
-                .limit(count)
-                .collect(Collectors.toList());
+//        List<Post> filteredPosts = posts.stream()
+//                .skip(index)
+//                .limit(count)
+//                .collect(Collectors.toList());
         List<PostResponse> listPostResponse = new ArrayList<>();
-        for (Post post : filteredPosts) {
-            UserResponse userOwner = userService.GetUser(post.getUserId());
+        for (Post post : posts) {
+            UserResponse userOwner = userService.getUser(post.getUserId());
             boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(userSession.GetUser().getId(), post.getUserId());
             PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId(), blockUser);
             listPostResponse.add(postResponse);
@@ -103,6 +101,7 @@ public class PostService implements IPostService {
                         mapper -> mapper.skip(Post::setId)
                 );
         modelMapper.map(postEditDTO, post);
+        postRepository.save(post);
     }
 
     @Override
@@ -146,10 +145,28 @@ public class PostService implements IPostService {
                 .build();
         int size = imageRepository.findByPostId(existingPost.getId()).size();
         if (size >= 5) {
-            throw    new BadRequestException("Number of images must be <=5");
+            throw new BadRequestException("Number of images must be <=5");
         }
         return imageRepository.save(newProductImage);
     }
 
+    @Override
+    public PostListResponse searchPost(SearchPostDTO searchPostDTO) throws Exception {
+        Pageable pageable = PageRequest.of(searchPostDTO.getIndex() - 1, searchPostDTO.getCount());
+        Page<Post> postsPage = postRepository.findByDescribedContainingIgnoreCase(
+                searchPostDTO.getKeyWord(), pageable);
+        List<Post> listpost = postsPage.getContent();
+        List<PostResponse> listPostResponse = new ArrayList<>();
+        for (Post post : listpost) {
+            UserResponse userOwner = userService.getUser(post.getUserId());
+            boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(userSession.GetUser().getId(), post.getUserId());
+            PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId(), blockUser);
+            listPostResponse.add(postResponse);
+        }
+        return PostListResponse.builder()
+                .postResponseList(listPostResponse)
+                .newItems(listPostResponse.size())
+                .build();
+    }
 
 }

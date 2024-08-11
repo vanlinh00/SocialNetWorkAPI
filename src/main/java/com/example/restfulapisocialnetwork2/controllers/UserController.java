@@ -1,10 +1,7 @@
 package com.example.restfulapisocialnetwork2.controllers;
 
 import com.example.restfulapisocialnetwork2.components.UserSession;
-import com.example.restfulapisocialnetwork2.dtos.BlockDTO;
-import com.example.restfulapisocialnetwork2.dtos.UserDTO;
-import com.example.restfulapisocialnetwork2.dtos.UserLoginDTO;
-import com.example.restfulapisocialnetwork2.dtos.UserVerificationDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
 import com.example.restfulapisocialnetwork2.services.BlockService;
 import com.example.restfulapisocialnetwork2.services.UserService;
 import jakarta.validation.Valid;
@@ -127,5 +124,4 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 }

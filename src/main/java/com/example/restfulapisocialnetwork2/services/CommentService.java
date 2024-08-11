@@ -57,7 +57,7 @@ public class CommentService implements ICommentService {
         List<Comment> listComment = commentRepository.findByPostId(id);
         List<CommentResponse> listPostResponse = new ArrayList<>();
         for (Comment Comment : listComment) {
-            UserResponse userResponse = userService.GetUser(Comment.getUserId());
+            UserResponse userResponse = userService.getUser(Comment.getUserId());
             CommentResponse commentResponse = CommentResponse.fromComment(Comment, userResponse);
             listPostResponse.add(commentResponse);
         }
@@ -102,7 +102,7 @@ public class CommentService implements ICommentService {
                                         + editCommentDTO.getId() + " and id comment: " + editCommentDTO.getIdCom()
                         ));
 
-        UserResponse userResponse = userService.GetUser(comment.getUserId());
+        UserResponse userResponse = userService.getUser(comment.getUserId());
         if (comment.getUserId() == userSession.GetUser().getId()) {
             throw new ForbiddenAccessException("You are not authorized to perform this action");
         }

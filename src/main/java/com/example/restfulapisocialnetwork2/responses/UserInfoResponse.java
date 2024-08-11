@@ -32,7 +32,7 @@ public class UserInfoResponse {
     public static UserInfoResponse fromUser(User user, DataFriendUserDTO dataFriendUserDTO, UserInfo userInfo) {
         UserInfoResponse userInfoResponse = UserInfoResponse.builder()
                 .id(user.getId())
-                .user_name(user.getUsername())
+                .user_name(user.getFullName())
                 .created(user.getCreatedAt())
                 .description(userInfo.getDescription())
                 .avatar(userInfo.getAvatar())

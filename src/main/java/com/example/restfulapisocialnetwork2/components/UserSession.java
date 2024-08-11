@@ -1,7 +1,6 @@
 package com.example.restfulapisocialnetwork2.components;
 import com.example.restfulapisocialnetwork2.models.User;
 import com.example.restfulapisocialnetwork2.services.UserService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +14,7 @@ public class UserSession{
     private User user;
 
     public void User(String phoneNumber, String token) throws Exception {
-        user= userService.GetUser(phoneNumber);
+        user= userService.getUser(phoneNumber);
         tokenUser=token;
     }
     public User GetUser(){

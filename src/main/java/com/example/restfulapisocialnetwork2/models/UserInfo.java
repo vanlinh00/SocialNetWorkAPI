@@ -31,9 +31,6 @@ public class UserInfo {
     @Column(name = "link", length = 255)
     private String link;
 
-    @Column(name = "address", length = 255)
-    private String address;
-
     @Column(name = "city", length = 100)
     private String city;
 

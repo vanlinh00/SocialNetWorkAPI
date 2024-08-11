@@ -1,9 +1,6 @@
 package com.example.restfulapisocialnetwork2.services;
 
-import com.example.restfulapisocialnetwork2.dtos.PostDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostEditDTO;
-import com.example.restfulapisocialnetwork2.dtos.PostImageDTO;
-import com.example.restfulapisocialnetwork2.dtos.ReportDTO;
+import com.example.restfulapisocialnetwork2.dtos.*;
 import com.example.restfulapisocialnetwork2.models.Image;
 import com.example.restfulapisocialnetwork2.models.Report;
 import com.example.restfulapisocialnetwork2.models.User;
@@ -26,4 +23,6 @@ public interface IPostService {
     Image createPostImage(
             Long postId,
             PostImageDTO postImageDTO) throws Exception;
+
+    PostListResponse searchPost(SearchPostDTO searchPostDTO) throws Exception;
 }
