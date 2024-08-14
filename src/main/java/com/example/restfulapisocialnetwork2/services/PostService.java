@@ -10,6 +10,7 @@ import com.example.restfulapisocialnetwork2.responses.PostResponse;
 import com.example.restfulapisocialnetwork2.responses.UserResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,11 +34,23 @@ public class PostService implements IPostService {
     private final ImageRepository imageRepository;
     private final BlockRepository blockRepository;
 
+
+    private PostDocumentRepository postDocumentRepository;
+
+
     public void createPost(PostDTO postDTO, User user) throws Exception {
         Post newPost = Post.builder()
                 .userId(user.getId())
                 .described(postDTO.getDescribed())
                 .build();
+        // Save to Elasticsearch
+        PostDocument postDocument = PostDocument.builder()
+                .id(String.valueOf(newPost.getId()))
+                .userId(newPost.getUserId())
+                .described(newPost.getDescribed())
+                .build();
+        postDocumentRepository.save(postDocument);
+
         postRepository.save(newPost);
     }
 
@@ -152,15 +165,10 @@ public class PostService implements IPostService {
 
     @Override
     public PostListResponse searchPost(SearchPostDTO searchPostDTO) throws Exception {
-        Pageable pageable = PageRequest.of(searchPostDTO.getIndex() - 1, searchPostDTO.getCount());
-        Page<Post> postsPage = postRepository.findByDescribedContainingIgnoreCase(
-                searchPostDTO.getKeyWord(), pageable);
-        List<Post> listpost = postsPage.getContent();
+        List<PostDocument> listPostDocument = postDocumentRepository.findByDescribedContainingIgnoreCase(searchPostDTO.getKeyWord());
         List<PostResponse> listPostResponse = new ArrayList<>();
-        for (Post post : listpost) {
-            UserResponse userOwner = userService.getUser(post.getUserId());
-            boolean blockUser = blockRepository.existsByUserIdAndBlockedUserId(userSession.GetUser().getId(), post.getUserId());
-            PostResponse postResponse = PostResponse.fromPost(post, userOwner, userSession.GetUser().getId(), blockUser);
+        for (PostDocument document : listPostDocument) {
+            PostResponse postResponse = getPost(document.getUserId());
             listPostResponse.add(postResponse);
         }
         return PostListResponse.builder()

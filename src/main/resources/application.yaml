@@ -36,3 +36,8 @@ spring:
           starttls:
             enable: true
             required: true
+  spring:
+      elasticsearch:
+        uris: http://localhost:9200
+        username: vanlinh
+        password: vanlinh123
